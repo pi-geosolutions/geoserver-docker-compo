@@ -1,0 +1,15 @@
+{$FQDN} {
+    tls internal
+    # For using a custom certificate:
+    # tls /etc/certs/ca.pem /etc/certs/key.pem
+
+    redir / /geoserver/ 302
+    
+    handle /geoserver/* {
+        reverse_proxy geoserver:8080
+    }
+
+    # handle {
+    #     reverse_proxy gateway:8080
+    # }
+}
