@@ -15,6 +15,7 @@ services:
       - "127.0.0.1:2019:2019"
     environment:
       - CADDY_ADMIN=0.0.0.0:2019
+      - FQDN=${FQDN:-geoserver-127-0-0-1.nip.io}
     volumes:
       - ./caddy/etc/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./caddy/data:/data/caddy
@@ -25,8 +26,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 10
-    env_file:
-      - .env
+
 
   geoserver:
     image: docker.osgeo.org/geoserver:2.28.2
@@ -37,16 +37,16 @@ services:
       #- SKIP_DEMO_DATA=true
       - INSTALL_EXTENSIONS=true
       - STABLE_EXTENSIONS=css,vectortiles
-      - GEOSERVER_ADMIN_USER=admin
-      - GEOSERVER_ADMIN_PASSWORD=CpGeOm2024_geoserver
-      - PROXY_BASE_URL=https://${FQDN}/geoserver
-      - GEOSERVER_CSRF_WHITELIST=${FQDN}
+      - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER:-admin}
+      - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_ADMIN_PASSWORD:-geoserver}
+      - PROXY_BASE_URL=https://${FQDN:-geoserver-127-0-0-1.nip.io}/geoserver
+      - GEOSERVER_CSRF_WHITELIST=${FQDN:-geoserver-127-0-0-1.nip.io}
       - POSTGRES_JNDI_ENABLED=true
       - POSTGRES_HOST=postgis
       - POSTGRES_PORT=5432
-      - POSTGRES_DB=cpgeom
-      - POSTGRES_USERNAME=cpgeom
-      - POSTGRES_PASSWORD=CpGeOm2024_postgres
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - POSTGRES_USERNAME=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-passwd}
       - POSTGRES_JNDI_RESOURCE_NAME=jdbc/postgres
       - EXTRA_JAVA_OPTS=-Xms2G -Xmx8G
     volumes:
@@ -61,9 +61,9 @@ services:
       - "127.0.0.1:5432:5432"
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_DB=cpgeom
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=CpGeOm2024_postgres
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-passwd}
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 
       - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
     volumes:
