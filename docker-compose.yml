@@ -1,0 +1,72 @@
+
+volumes:
+  #geoserver_datadir:
+  #geoserver_geodata:
+  geoserver_tiles:
+  postgis_data:
+  caddy-config:
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:2019:2019"
+    environment:
+      - CADDY_ADMIN=0.0.0.0:2019
+    volumes:
+      - ./caddy/etc/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data/caddy
+      - caddy-config:/config
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:2019/reverse_proxy/upstreams >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    env_file:
+      - .env
+
+  geoserver:
+    image: docker.osgeo.org/geoserver:2.28.2
+    # ports:
+    #   - "8082:8080"
+    environment:
+      - EXTRA_JAVA_OPTS=-Xms512m -Xmx4g
+      #- SKIP_DEMO_DATA=true
+      - INSTALL_EXTENSIONS=true
+      - STABLE_EXTENSIONS=css,vectortiles
+      - GEOSERVER_ADMIN_USER=admin
+      - GEOSERVER_ADMIN_PASSWORD=CpGeOm2024_geoserver
+      - PROXY_BASE_URL=https://${FQDN}/geoserver
+      - GEOSERVER_CSRF_WHITELIST=${FQDN}
+      - POSTGRES_JNDI_ENABLED=true
+      - POSTGRES_HOST=postgis
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=cpgeom
+      - POSTGRES_USERNAME=cpgeom
+      - POSTGRES_PASSWORD=CpGeOm2024_postgres
+      - POSTGRES_JNDI_RESOURCE_NAME=jdbc/postgres
+      - EXTRA_JAVA_OPTS=-Xms2G -Xmx8G
+    volumes:
+      - ./geoserver_datadir:/opt/geoserver_data/
+      - ./geoserver_geodata:/mnt/geoserver_geodata
+      - geoserver_tiles:/mnt/geoserver_tiles
+    restart: unless-stopped
+
+  postgis:
+    image: postgis/postgis:14-3.3-alpine
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_DB=cpgeom
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=CpGeOm2024_postgres
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 
+      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+    volumes:
+      - postgis_data:/var/lib/postgresql/data/pgdata
+    restart: unless-stopped
+
